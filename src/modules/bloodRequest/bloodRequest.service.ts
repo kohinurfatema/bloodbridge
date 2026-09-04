@@ -82,6 +82,38 @@ export const getMyBloodRequests = async (requesterId: string, page = 1, limit = 
   };
 };
 
+export const updateRequestStatus = async (id: string, userId: string, role: string, status: string) => {
+  const request = await prisma.bloodRequest.findUnique({ where: { id, deletedAt: null } });
+  if (!request) throw new AppError('Blood request not found', 404);
+
+  if (role === 'REQUESTER') {
+    if (request.requesterId !== userId) throw new AppError('You can only update your own requests', 403);
+    if (status !== 'CANCELLED') throw new AppError('Requesters can only cancel their own requests', 403);
+    if (request.status !== 'PENDING') throw new AppError('Only pending requests can be cancelled', 400);
+  }
+
+  if (role === 'DONOR') throw new AppError('Donors cannot update request status', 403);
+
+  const updated = await prisma.bloodRequest.update({
+    where: { id },
+    data: { status: status as any },
+    include: { requester: { select: { id: true, name: true, email: true } } },
+  });
+  return updated;
+};
+
+export const softDeleteRequest = async (id: string, userId: string, role: string) => {
+  const request = await prisma.bloodRequest.findUnique({ where: { id, deletedAt: null } });
+  if (!request) throw new AppError('Blood request not found', 404);
+
+  if (role === 'REQUESTER' && request.requesterId !== userId) {
+    throw new AppError('You can only delete your own requests', 403);
+  }
+  if (role === 'DONOR') throw new AppError('Donors cannot delete requests', 403);
+
+  await prisma.bloodRequest.update({ where: { id }, data: { deletedAt: new Date() } });
+};
+
 export const getBloodRequestById = async (id: string) => {
   const request = await prisma.bloodRequest.findUnique({
     where: { id, deletedAt: null },
