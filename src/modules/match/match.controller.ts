@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../../middleware/authenticate';
-import { createMatch, getMatchesForRequest, getMyMatches } from './match.service';
+import { createMatch, getMatchesForRequest, getMyMatches, respondToMatch } from './match.service';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/AppError';
 
@@ -26,5 +26,17 @@ export const getMyMatchesHandler = async (req: AuthRequest, res: Response, next:
     const limit = parseInt(req.query.limit as string) || 10;
     const data = await getMyMatches(req.user!.id, page, limit);
     sendSuccess(res, 200, 'Your matches retrieved', data);
+  } catch (err) { next(err); }
+};
+
+export const respondToMatchHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { response } = req.body;
+    const validResponses = ['ACCEPTED', 'DECLINED', 'COMPLETED'];
+    if (!response || !validResponses.includes(response)) {
+      throw new AppError(`Response must be one of: ${validResponses.join(', ')}`, 400);
+    }
+    const data = await respondToMatch(req.params.id, req.user!.id, response);
+    sendSuccess(res, 200, `Match ${response.toLowerCase()} successfully`, data);
   } catch (err) { next(err); }
 };

@@ -51,6 +51,54 @@ export const getMatchesForRequest = async (requestId: string, userId: string, ro
   return matches;
 };
 
+export const respondToMatch = async (matchId: string, userId: string, response: 'ACCEPTED' | 'DECLINED' | 'COMPLETED') => {
+  const donor = await prisma.donorProfile.findUnique({ where: { userId } });
+  if (!donor) throw new AppError('Donor profile not found', 404);
+
+  const match = await prisma.donationMatch.findUnique({
+    where: { id: matchId },
+    include: { request: true },
+  });
+  if (!match) throw new AppError('Match not found', 404);
+  if (match.donorId !== donor.id) throw new AppError('You can only respond to your own matches', 403);
+  if (match.status === 'DECLINED' || match.status === 'COMPLETED') {
+    throw new AppError(`Match is already ${match.status.toLowerCase()}`, 400);
+  }
+
+  if (response === 'ACCEPTED') {
+    const [updated] = await prisma.$transaction([
+      prisma.donationMatch.update({ where: { id: matchId }, data: { status: 'ACCEPTED' } }),
+      prisma.donorProfile.update({ where: { id: donor.id }, data: { isAvailable: false } }),
+    ]);
+    return updated;
+  }
+
+  if (response === 'COMPLETED') {
+    if (match.status !== 'ACCEPTED') throw new AppError('Only accepted matches can be marked as completed', 400);
+    const [updated] = await prisma.$transaction([
+      prisma.donationMatch.update({ where: { id: matchId }, data: { status: 'COMPLETED' } }),
+      prisma.donorProfile.update({
+        where: { id: donor.id },
+        data: { isAvailable: true, totalDonations: { increment: 1 }, lastDonationDate: new Date() },
+      }),
+      prisma.bloodRequest.update({ where: { id: match.requestId }, data: { status: 'FULFILLED' } }),
+    ]);
+    return updated;
+  }
+
+  // DECLINED
+  const updated = await prisma.donationMatch.update({ where: { id: matchId }, data: { status: 'DECLINED' } });
+
+  const activeMatches = await prisma.donationMatch.count({
+    where: { requestId: match.requestId, status: { in: ['PENDING', 'ACCEPTED'] } },
+  });
+  if (activeMatches === 0) {
+    await prisma.bloodRequest.update({ where: { id: match.requestId }, data: { status: 'PENDING' } });
+  }
+
+  return updated;
+};
+
 export const getMyMatches = async (userId: string, page = 1, limit = 10) => {
   const donor = await prisma.donorProfile.findUnique({ where: { userId } });
   if (!donor) throw new AppError('Donor profile not found', 404);
