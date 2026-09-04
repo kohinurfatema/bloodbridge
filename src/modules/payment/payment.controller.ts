@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../../middleware/authenticate';
-import { initiatePayment, getMyPayments } from './payment.service';
+import { initiatePayment, verifyPayment, getMyPayments } from './payment.service';
 import { initiatePaymentSchema } from './payment.validation';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/AppError';
@@ -12,6 +12,16 @@ export const initiatePaymentHandler = async (req: AuthRequest, res: Response, ne
     const { requestId, amount, currency } = parsed.data;
     const data = await initiatePayment(req.user!.id, requestId, amount, currency);
     sendSuccess(res, 201, 'Payment session created', data);
+  } catch (err) { next(err); }
+};
+
+export const verifyPaymentHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { session_id } = req.query as { session_id: string };
+    if (!session_id) throw new AppError('session_id query parameter is required', 400);
+    const data = await verifyPayment(session_id);
+    const message = data.alreadyVerified ? 'Payment already verified' : 'Payment verified successfully';
+    sendSuccess(res, 200, message, data.payment);
   } catch (err) { next(err); }
 };
 

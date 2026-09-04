@@ -53,6 +53,32 @@ export const initiatePayment = async (payerId: string, requestId: string, amount
   return { payment, checkoutUrl: session.url };
 };
 
+export const verifyPayment = async (sessionId: string) => {
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+  const payment = await prisma.payment.findFirst({ where: { stripeSessionId: sessionId } });
+  if (!payment) throw new AppError('Payment record not found', 404);
+
+  if (payment.status === 'COMPLETED') {
+    return { payment, alreadyVerified: true };
+  }
+
+  if (session.payment_status !== 'paid') {
+    await prisma.payment.update({ where: { id: payment.id }, data: { status: 'FAILED' } });
+    throw new AppError('Payment was not successful', 402);
+  }
+
+  const updated = await prisma.payment.update({
+    where: { id: payment.id },
+    data: { status: 'COMPLETED' },
+    include: {
+      request: { select: { id: true, patientName: true, bloodType: true, hospital: true } },
+    },
+  });
+
+  return { payment: updated, alreadyVerified: false };
+};
+
 export const getMyPayments = async (payerId: string, page = 1, limit = 10) => {
   const skip = (page - 1) * limit;
   const where = { payerId };
