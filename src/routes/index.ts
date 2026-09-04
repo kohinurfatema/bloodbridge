@@ -7,6 +7,7 @@ import matchRoutes from '../modules/match/match.routes';
 import alertRoutes from '../modules/alert/alert.routes';
 import paymentRoutes from '../modules/payment/payment.routes';
 import auditRoutes from '../modules/audit/audit.routes';
+import adminRoutes from '../modules/admin/admin.routes';
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use('/matches', matchRoutes);
 router.use('/alerts', alertRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/audit', auditRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;
