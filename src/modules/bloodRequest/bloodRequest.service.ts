@@ -1,5 +1,6 @@
 import prisma from '../../config/prisma';
 import { AppError } from '../../utils/AppError';
+import { createEmergencyAlert } from '../alert/alert.service';
 
 export const createBloodRequest = async (requesterId: string, data: {
   patientName: string;
@@ -21,6 +22,11 @@ export const createBloodRequest = async (requesterId: string, data: {
     },
     include: { requester: { select: { id: true, name: true, email: true, phone: true } } },
   });
+
+  if (data.urgency === 'EMERGENCY') {
+    await createEmergencyAlert(request.id);
+  }
+
   return request;
 };
 
