@@ -4,22 +4,24 @@ import { createEmergencyAlert } from '../alert/alert.service';
 import { logAudit } from '../../utils/auditLogger';
 
 export const createBloodRequest = async (requesterId: string, data: {
-  patientName: string;
   bloodType: string;
   urgency: string;
-  hospital: string;
+  units?: number;
+  hospital?: string;
   location: string;
-  note?: string;
+  notes?: string;
+  requiredDate: string;
 }) => {
   const request = await prisma.bloodRequest.create({
     data: {
       requesterId,
-      patientName: data.patientName,
       bloodType: data.bloodType as any,
       urgency: data.urgency as any,
+      units: data.units ?? 1,
       hospital: data.hospital,
       location: data.location,
-      note: data.note,
+      notes: data.notes,
+      requiredDate: new Date(data.requiredDate),
     },
     include: { requester: { select: { id: true, name: true, email: true, phone: true } } },
   });

@@ -4,12 +4,13 @@ const bloodTypes = ['A_POS', 'A_NEG', 'B_POS', 'B_NEG', 'AB_POS', 'AB_NEG', 'O_P
 const urgencies = ['NORMAL', 'URGENT', 'EMERGENCY'] as const;
 
 export const createRequestSchema = z.object({
-  patientName: z.string().min(2, 'Patient name is required'),
   bloodType: z.enum(bloodTypes, { error: 'Invalid blood type' }),
   urgency: z.enum(urgencies).optional().default('NORMAL'),
-  hospital: z.string().min(2, 'Hospital name is required'),
+  units: z.number().int().positive().optional().default(1),
+  hospital: z.string().min(2, 'Hospital name is required').optional(),
   location: z.string().min(2, 'Location is required'),
-  note: z.string().optional(),
+  notes: z.string().optional(),
+  requiredDate: z.string().datetime({ offset: true }),
 });
 
 export const listRequestsQuerySchema = z.object({
@@ -19,6 +20,6 @@ export const listRequestsQuerySchema = z.object({
   location: z.string().optional(),
   page: z.coerce.number().int().positive().optional().default(1),
   limit: z.coerce.number().int().positive().max(50).optional().default(10),
-  sortBy: z.enum(['createdAt', 'urgency']).optional().default('createdAt'),
+  sortBy: z.enum(['createdAt', 'urgency', 'requiredDate']).optional().default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
 });

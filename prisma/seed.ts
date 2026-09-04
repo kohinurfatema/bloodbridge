@@ -64,12 +64,13 @@ async function main() {
     create: {
       id: 'seed-request-001',
       requesterId: requester.id,
-      patientName: 'Karim Hossain',
       bloodType: 'O_POS',
       urgency: 'URGENT',
       hospital: 'Dhaka Medical College Hospital',
       location: 'Dhaka',
-      note: 'Needed urgently for surgery tomorrow morning.',
+      notes: 'Needed urgently for surgery tomorrow morning.',
+      requiredDate: new Date('2026-09-10'),
+      units: 2,
     },
   });
 
