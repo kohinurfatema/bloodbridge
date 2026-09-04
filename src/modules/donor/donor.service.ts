@@ -1,6 +1,49 @@
 import prisma from '../../config/prisma';
 import { AppError } from '../../utils/AppError';
 
+export const searchDonors = async (query: {
+  bloodType?: string;
+  location?: string;
+  isAvailable?: boolean;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}) => {
+  const page = query.page ?? 1;
+  const limit = query.limit ?? 10;
+  const skip = (page - 1) * limit;
+
+  const where: any = {
+    user: { deletedAt: null, isActive: true },
+    ...(query.bloodType && { bloodType: query.bloodType }),
+    ...(query.location && { location: { contains: query.location, mode: 'insensitive' } }),
+    ...(query.isAvailable !== undefined && { isAvailable: query.isAvailable }),
+  };
+
+  const allowedSortFields = ['createdAt', 'totalDonations', 'lastDonationDate'];
+  const sortBy = allowedSortFields.includes(query.sortBy ?? '') ? query.sortBy! : 'createdAt';
+  const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
+
+  const [donors, total] = await Promise.all([
+    prisma.donorProfile.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { [sortBy]: sortOrder },
+      include: {
+        user: { select: { id: true, name: true, phone: true } },
+      },
+    }),
+    prisma.donorProfile.count({ where }),
+  ]);
+
+  return {
+    donors,
+    meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+  };
+};
+
 export const registerDonor = async (userId: string, data: {
   bloodType: string;
   location: string;
