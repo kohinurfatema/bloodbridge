@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import prisma from '../../config/prisma';
 import { AppError } from '../../utils/AppError';
+import { logAudit } from '../../utils/auditLogger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '');
 const CLIENT_URL = process.env.CLIENT_URL ?? 'http://localhost:3000';
@@ -50,6 +51,7 @@ export const initiatePayment = async (payerId: string, requestId: string, amount
     },
   });
 
+  await logAudit({ userId: payerId, action: 'PAYMENT_INITIATED', entity: 'Payment', entityId: payment.id, metadata: { requestId, amount, currency } });
   return { payment, checkoutUrl: session.url };
 };
 

@@ -6,6 +6,7 @@ import bloodRequestRoutes from '../modules/bloodRequest/bloodRequest.routes';
 import matchRoutes from '../modules/match/match.routes';
 import alertRoutes from '../modules/alert/alert.routes';
 import paymentRoutes from '../modules/payment/payment.routes';
+import auditRoutes from '../modules/audit/audit.routes';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/requests', bloodRequestRoutes);
 router.use('/matches', matchRoutes);
 router.use('/alerts', alertRoutes);
 router.use('/payments', paymentRoutes);
+router.use('/audit', auditRoutes);
 
 export default router;

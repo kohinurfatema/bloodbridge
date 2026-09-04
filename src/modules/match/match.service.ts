@@ -1,5 +1,6 @@
 import prisma from '../../config/prisma';
 import { AppError } from '../../utils/AppError';
+import { logAudit } from '../../utils/auditLogger';
 
 export const createMatch = async (requestId: string, donorId: string, adminId: string) => {
   const request = await prisma.bloodRequest.findUnique({ where: { id: requestId, deletedAt: null } });
@@ -30,6 +31,7 @@ export const createMatch = async (requestId: string, donorId: string, adminId: s
     prisma.bloodRequest.update({ where: { id: requestId }, data: { status: 'MATCHED' } }),
   ]);
 
+  await logAudit({ userId: adminId, action: 'MATCH_CREATED', entity: 'DonationMatch', entityId: match.id, metadata: { requestId, donorId } });
   return match;
 };
 

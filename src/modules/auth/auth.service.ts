@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../../config/prisma';
 import { AppError } from '../../utils/AppError';
+import { logAudit } from '../../utils/auditLogger';
 
 const JWT_SECRET = process.env.JWT_SECRET ?? 'secret';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET ?? 'refresh_secret';
@@ -26,6 +27,7 @@ export const registerUser = async (name: string, email: string, password: string
   });
 
   const tokens = generateTokens(user.id, user.role);
+  await logAudit({ userId: user.id, action: 'USER_REGISTERED', entity: 'User', entityId: user.id });
   return { user, ...tokens };
 };
 
@@ -38,6 +40,7 @@ export const loginUser = async (email: string, password: string) => {
   if (!valid) throw new AppError('Invalid email or password', 401);
 
   const tokens = generateTokens(user.id, user.role);
+  await logAudit({ userId: user.id, action: 'USER_LOGGED_IN', entity: 'User', entityId: user.id });
   return {
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
     ...tokens,

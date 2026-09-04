@@ -1,6 +1,7 @@
 import prisma from '../../config/prisma';
 import { AppError } from '../../utils/AppError';
 import { createEmergencyAlert } from '../alert/alert.service';
+import { logAudit } from '../../utils/auditLogger';
 
 export const createBloodRequest = async (requesterId: string, data: {
   patientName: string;
@@ -26,6 +27,8 @@ export const createBloodRequest = async (requesterId: string, data: {
   if (data.urgency === 'EMERGENCY') {
     await createEmergencyAlert(request.id);
   }
+
+  await logAudit({ userId: requesterId, action: 'BLOOD_REQUEST_CREATED', entity: 'BloodRequest', entityId: request.id, metadata: { bloodType: data.bloodType, urgency: data.urgency } });
 
   return request;
 };
