@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { registerUser, loginUser, refreshAccessToken } from './auth.service';
+import { googleLogin } from './google.service';
 import { registerSchema, loginSchema, refreshTokenSchema } from './auth.validation';
 import { sendSuccess } from '../../utils/response';
 import { AppError } from '../../utils/AppError';
@@ -29,5 +30,14 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
     if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.errors.map(e => e.message));
     const result = refreshAccessToken(parsed.data.refreshToken);
     sendSuccess(res, 200, 'Token refreshed', result);
+  } catch (err) { next(err); }
+};
+
+export const googleAuth = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) throw new AppError('Google ID token is required', 400);
+    const result = await googleLogin(idToken);
+    sendSuccess(res, 200, 'Google login successful', result);
   } catch (err) { next(err); }
 };
