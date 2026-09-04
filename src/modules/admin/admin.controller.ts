@@ -1,7 +1,14 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../../middleware/authenticate';
-import { listAllUsers, toggleUserStatus, softDeleteUser } from './admin.service';
+import { listAllUsers, toggleUserStatus, softDeleteUser, getDashboardStats } from './admin.service';
 import { sendSuccess } from '../../utils/response';
+
+export const getDashboardStatsHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const data = await getDashboardStats();
+    sendSuccess(res, 200, 'Dashboard statistics retrieved', data);
+  } catch (err) { next(err); }
+};
 
 export const listUsersHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

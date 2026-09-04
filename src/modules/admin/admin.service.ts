@@ -2,6 +2,71 @@ import prisma from '../../config/prisma';
 import { AppError } from '../../utils/AppError';
 import { logAudit } from '../../utils/auditLogger';
 
+export const getDashboardStats = async () => {
+  const [
+    totalUsers,
+    donors,
+    requesters,
+    admins,
+    totalRequests,
+    pendingRequests,
+    matchedRequests,
+    fulfilledRequests,
+    cancelledRequests,
+    totalMatches,
+    completedMatches,
+    totalAlerts,
+    unresolvedAlerts,
+    totalPayments,
+    completedPayments,
+    recentRequests,
+    recentMatches,
+  ] = await Promise.all([
+    prisma.user.count({ where: { deletedAt: null } }),
+    prisma.user.count({ where: { role: 'DONOR', deletedAt: null } }),
+    prisma.user.count({ where: { role: 'REQUESTER', deletedAt: null } }),
+    prisma.user.count({ where: { role: 'ADMIN', deletedAt: null } }),
+    prisma.bloodRequest.count({ where: { deletedAt: null } }),
+    prisma.bloodRequest.count({ where: { status: 'PENDING', deletedAt: null } }),
+    prisma.bloodRequest.count({ where: { status: 'MATCHED', deletedAt: null } }),
+    prisma.bloodRequest.count({ where: { status: 'FULFILLED', deletedAt: null } }),
+    prisma.bloodRequest.count({ where: { status: 'CANCELLED', deletedAt: null } }),
+    prisma.donationMatch.count(),
+    prisma.donationMatch.count({ where: { status: 'COMPLETED' } }),
+    prisma.emergencyAlert.count(),
+    prisma.emergencyAlert.count({ where: { isResolved: false } }),
+    prisma.payment.count(),
+    prisma.payment.aggregate({ where: { status: 'COMPLETED' }, _sum: { amount: true }, _count: true }),
+    prisma.bloodRequest.findMany({
+      where: { deletedAt: null },
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, patientName: true, bloodType: true, urgency: true, status: true, createdAt: true },
+    }),
+    prisma.donationMatch.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        request: { select: { patientName: true, bloodType: true } },
+        donor: { select: { user: { select: { name: true } } } },
+      },
+    }),
+  ]);
+
+  return {
+    users: { total: totalUsers, donors, requesters, admins },
+    bloodRequests: { total: totalRequests, pending: pendingRequests, matched: matchedRequests, fulfilled: fulfilledRequests, cancelled: cancelledRequests },
+    donations: { total: totalMatches, completed: completedMatches },
+    alerts: { total: totalAlerts, unresolved: unresolvedAlerts },
+    payments: {
+      total: totalPayments,
+      completed: completedPayments._count,
+      totalRevenue: completedPayments._sum.amount ?? 0,
+    },
+    recent: { requests: recentRequests, matches: recentMatches },
+  };
+};
+
 export const listAllUsers = async (query: {
   role?: string;
   isActive?: boolean;
