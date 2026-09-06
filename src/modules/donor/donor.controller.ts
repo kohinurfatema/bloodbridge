@@ -8,7 +8,7 @@ import { AppError } from '../../utils/AppError';
 export const registerDonorHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const parsed = registerDonorSchema.safeParse(req.body);
-    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.errors.map(e => e.message));
+    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.issues.map(e => e.message));
     const data = await registerDonor(req.user!.id, parsed.data);
     sendSuccess(res, 201, 'Donor profile created', data);
   } catch (err) { next(err); }
@@ -24,7 +24,7 @@ export const getMyDonorProfileHandler = async (req: AuthRequest, res: Response, 
 export const updateMyDonorProfileHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const parsed = updateDonorSchema.safeParse(req.body);
-    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.errors.map(e => e.message));
+    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.issues.map(e => e.message));
     const data = await updateMyDonorProfile(req.user!.id, parsed.data);
     sendSuccess(res, 200, 'Donor profile updated', data);
   } catch (err) { next(err); }

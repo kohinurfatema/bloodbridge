@@ -8,7 +8,7 @@ import { AppError } from '../../utils/AppError';
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const parsed = registerSchema.safeParse(req.body);
-    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.errors.map(e => e.message));
+    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.issues.map(e => e.message));
     const { name, email, password, role, phone } = parsed.data;
     const result = await registerUser(name, email, password, role, phone);
     sendSuccess(res, 201, 'Registration successful', result);
@@ -18,7 +18,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const parsed = loginSchema.safeParse(req.body);
-    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.errors.map(e => e.message));
+    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.issues.map(e => e.message));
     const result = await loginUser(parsed.data.email, parsed.data.password);
     sendSuccess(res, 200, 'Login successful', result);
   } catch (err) { next(err); }
@@ -27,7 +27,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const parsed = refreshTokenSchema.safeParse(req.body);
-    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.errors.map(e => e.message));
+    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.issues.map(e => e.message));
     const result = refreshAccessToken(parsed.data.refreshToken);
     sendSuccess(res, 200, 'Token refreshed', result);
   } catch (err) { next(err); }

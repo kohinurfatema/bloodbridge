@@ -15,7 +15,7 @@ export const getMe = async (req: AuthRequest, res: Response, next: NextFunction)
 export const updateMe = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const parsed = updateProfileSchema.safeParse(req.body);
-    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.errors.map(e => e.message));
+    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.issues.map(e => e.message));
     const data = await updateMyProfile(req.user!.id, parsed.data);
     sendSuccess(res, 200, 'Profile updated', data);
   } catch (err) { next(err); }

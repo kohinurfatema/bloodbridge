@@ -8,7 +8,7 @@ import { AppError } from '../../utils/AppError';
 export const initiatePaymentHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const parsed = initiatePaymentSchema.safeParse(req.body);
-    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.errors.map(e => e.message));
+    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.issues.map(e => e.message));
     const { requestId, amount, currency } = parsed.data;
     const data = await initiatePayment(req.user!.id, requestId, amount, currency);
     sendSuccess(res, 201, 'Payment session created', data);

@@ -23,7 +23,13 @@ app.use(rateLimit({
   message: { success: false, message: 'Too many requests, please try again later.', errors: [] },
 }));
 
-app.use(express.json());
+app.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    express.json()(req, res, next);
+  } else {
+    next();
+  }
+});
 
 app.get('/', (_req, res) => {
   res.json({ success: true, message: 'BloodBridge API is running 🩸' });

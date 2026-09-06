@@ -6,9 +6,9 @@ import { AppError } from '../../utils/AppError';
 
 export const createMatchHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { requestId, donorId } = req.body;
-    if (!requestId || !donorId) throw new AppError('requestId and donorId are required', 400);
-    const data = await createMatch(requestId, donorId, req.user!.id);
+    const { requestId, donorId, donorProfileId } = req.body;
+    if (!requestId || !donorId || !donorProfileId) throw new AppError('requestId, donorId and donorProfileId are required', 400);
+    const data = await createMatch(requestId, donorId, donorProfileId, req.user!.id);
     sendSuccess(res, 201, 'Donor matched to blood request', data);
   } catch (err) { next(err); }
 };

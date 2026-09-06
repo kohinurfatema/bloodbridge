@@ -2,17 +2,17 @@ import prisma from '../../config/prisma';
 import { AppError } from '../../utils/AppError';
 import { logAudit } from '../../utils/auditLogger';
 
-export const createMatch = async (requestId: string, donorId: string, adminId: string) => {
+export const createMatch = async (requestId: string, donorId: string, donorProfileId: string, adminId: string) => {
   const request = await prisma.bloodRequest.findUnique({ where: { id: requestId, deletedAt: null } });
   if (!request) throw new AppError('Blood request not found', 404);
   if (request.status === 'CANCELLED') throw new AppError('Cannot match a cancelled request', 400);
   if (request.status === 'FULFILLED') throw new AppError('Request is already fulfilled', 400);
 
-  const donor = await prisma.donorProfile.findUnique({ where: { id: donorId } });
-  if (!donor) throw new AppError('Donor profile not found', 404);
-  if (!donor.isAvailable) throw new AppError('Donor is not available', 400);
+  const donorProfile = await prisma.donorProfile.findUnique({ where: { id: donorProfileId } });
+  if (!donorProfile) throw new AppError('Donor profile not found', 404);
+  if (!donorProfile.isAvailable) throw new AppError('Donor is not available', 400);
 
-  const bloodTypeCompatible = donor.bloodType === request.bloodType;
+  const bloodTypeCompatible = donorProfile.bloodType === request.bloodType;
   if (!bloodTypeCompatible) throw new AppError('Donor blood type does not match request blood type', 400);
 
   const existingMatch = await prisma.donationMatch.findFirst({
@@ -22,10 +22,10 @@ export const createMatch = async (requestId: string, donorId: string, adminId: s
 
   const [match] = await prisma.$transaction([
     prisma.donationMatch.create({
-      data: { requestId, donorId },
+      data: { requestId, donorId, donorProfileId },
       include: {
-        request: { select: { id: true, patientName: true, bloodType: true, hospital: true, urgency: true } },
-        donor: { select: { user: { select: { id: true, name: true, phone: true } } } },
+        request: { select: { id: true, bloodType: true, hospital: true, urgency: true } },
+        donor: { select: { id: true, name: true, phone: true } },
       },
     }),
     prisma.bloodRequest.update({ where: { id: requestId }, data: { status: 'MATCHED' } }),
@@ -46,7 +46,8 @@ export const getMatchesForRequest = async (requestId: string, userId: string, ro
   const matches = await prisma.donationMatch.findMany({
     where: { requestId },
     include: {
-      donor: { select: { id: true, bloodType: true, location: true, user: { select: { name: true, phone: true } } } },
+      donorProfile: { select: { id: true, bloodType: true, location: true } },
+      donor: { select: { id: true, name: true, phone: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -54,15 +55,15 @@ export const getMatchesForRequest = async (requestId: string, userId: string, ro
 };
 
 export const respondToMatch = async (matchId: string, userId: string, response: 'ACCEPTED' | 'DECLINED' | 'COMPLETED') => {
-  const donor = await prisma.donorProfile.findUnique({ where: { userId } });
-  if (!donor) throw new AppError('Donor profile not found', 404);
+  const donorProfile = await prisma.donorProfile.findUnique({ where: { userId } });
+  if (!donorProfile) throw new AppError('Donor profile not found', 404);
 
   const match = await prisma.donationMatch.findUnique({
     where: { id: matchId },
     include: { request: true },
   });
   if (!match) throw new AppError('Match not found', 404);
-  if (match.donorId !== donor.id) throw new AppError('You can only respond to your own matches', 403);
+  if (match.donorId !== userId) throw new AppError('You can only respond to your own matches', 403);
   if (match.status === 'DECLINED' || match.status === 'COMPLETED') {
     throw new AppError(`Match is already ${match.status.toLowerCase()}`, 400);
   }
@@ -70,7 +71,7 @@ export const respondToMatch = async (matchId: string, userId: string, response: 
   if (response === 'ACCEPTED') {
     const [updated] = await prisma.$transaction([
       prisma.donationMatch.update({ where: { id: matchId }, data: { status: 'ACCEPTED' } }),
-      prisma.donorProfile.update({ where: { id: donor.id }, data: { isAvailable: false } }),
+      prisma.donorProfile.update({ where: { id: donorProfile.id }, data: { isAvailable: false } }),
     ]);
     return updated;
   }
@@ -80,7 +81,7 @@ export const respondToMatch = async (matchId: string, userId: string, response: 
     const [updated] = await prisma.$transaction([
       prisma.donationMatch.update({ where: { id: matchId }, data: { status: 'COMPLETED' } }),
       prisma.donorProfile.update({
-        where: { id: donor.id },
+        where: { id: donorProfile.id },
         data: { isAvailable: true, totalDonations: { increment: 1 }, lastDonationDate: new Date() },
       }),
       prisma.bloodRequest.update({ where: { id: match.requestId }, data: { status: 'FULFILLED' } }),
@@ -102,11 +103,11 @@ export const respondToMatch = async (matchId: string, userId: string, response: 
 };
 
 export const getMyMatches = async (userId: string, page = 1, limit = 10) => {
-  const donor = await prisma.donorProfile.findUnique({ where: { userId } });
-  if (!donor) throw new AppError('Donor profile not found', 404);
+  const donorProfile = await prisma.donorProfile.findUnique({ where: { userId } });
+  if (!donorProfile) throw new AppError('Donor profile not found', 404);
 
   const skip = (page - 1) * limit;
-  const where = { donorId: donor.id };
+  const where = { donorId: userId };
 
   const [matches, total] = await Promise.all([
     prisma.donationMatch.findMany({
@@ -116,7 +117,7 @@ export const getMyMatches = async (userId: string, page = 1, limit = 10) => {
       orderBy: { createdAt: 'desc' },
       include: {
         request: {
-          select: { id: true, patientName: true, bloodType: true, hospital: true, location: true, urgency: true, status: true },
+          select: { id: true, bloodType: true, hospital: true, location: true, urgency: true, status: true },
         },
       },
     }),

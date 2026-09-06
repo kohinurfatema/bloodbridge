@@ -41,14 +41,14 @@ export const getDashboardStats = async () => {
       where: { deletedAt: null },
       take: 5,
       orderBy: { createdAt: 'desc' },
-      select: { id: true, patientName: true, bloodType: true, urgency: true, status: true, createdAt: true },
+      select: { id: true, hospital: true, bloodType: true, urgency: true, status: true, createdAt: true },
     }),
     prisma.donationMatch.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
-        request: { select: { patientName: true, bloodType: true } },
-        donor: { select: { user: { select: { name: true } } } },
+        request: { select: { hospital: true, bloodType: true } },
+        donor: { select: { name: true } },
       },
     }),
   ]);

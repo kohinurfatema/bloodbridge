@@ -15,7 +15,7 @@ import { AppError } from '../../utils/AppError';
 export const createRequest = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const parsed = createRequestSchema.safeParse(req.body);
-    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.errors.map(e => e.message));
+    if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.issues.map(e => e.message));
     const data = await createBloodRequest(req.user!.id, parsed.data);
     sendSuccess(res, 201, 'Blood request created', data);
   } catch (err) { next(err); }
@@ -24,7 +24,7 @@ export const createRequest = async (req: AuthRequest, res: Response, next: NextF
 export const listRequests = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const parsed = listRequestsQuerySchema.safeParse(req.query);
-    if (!parsed.success) throw new AppError('Invalid query parameters', 400, parsed.error.errors.map(e => e.message));
+    if (!parsed.success) throw new AppError('Invalid query parameters', 400, parsed.error.issues.map(e => e.message));
     const data = await listBloodRequests(parsed.data as any);
     sendSuccess(res, 200, 'Blood requests retrieved', data);
   } catch (err) { next(err); }
