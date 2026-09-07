@@ -15,7 +15,7 @@ export const createMatchHandler = async (req: AuthRequest, res: Response, next: 
 
 export const getMatchesForRequestHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const data = await getMatchesForRequest(req.params.requestId, req.user!.id, req.user!.role);
+    const data = await getMatchesForRequest(req.params.requestId as string, req.user!.id, req.user!.role);
     sendSuccess(res, 200, 'Matches retrieved', data);
   } catch (err) { next(err); }
 };
@@ -36,7 +36,7 @@ export const respondToMatchHandler = async (req: AuthRequest, res: Response, nex
     if (!response || !validResponses.includes(response)) {
       throw new AppError(`Response must be one of: ${validResponses.join(', ')}`, 400);
     }
-    const data = await respondToMatch(req.params.id, req.user!.id, response);
+    const data = await respondToMatch(req.params.id as string, req.user!.id, response);
     sendSuccess(res, 200, `Match ${response.toLowerCase()} successfully`, data);
   } catch (err) { next(err); }
 };

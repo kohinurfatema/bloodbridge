@@ -82,7 +82,7 @@ export const getMyBloodRequests = async (requesterId: string, page = 1, limit = 
       skip,
       take: limit,
       orderBy: { createdAt: 'desc' },
-      include: { matches: { select: { id: true, status: true, donor: { select: { user: { select: { name: true, phone: true } } } } } } },
+      include: { matches: { select: { id: true, status: true, donor: { select: { name: true, phone: true } } } } },
     }),
     prisma.bloodRequest.count({ where }),
   ]);
@@ -133,7 +133,7 @@ export const getBloodRequestById = async (id: string) => {
       matches: {
         select: {
           id: true, status: true, createdAt: true,
-          donor: { select: { user: { select: { name: true, phone: true } } } },
+          donor: { select: { name: true, phone: true } },
         },
       },
     },

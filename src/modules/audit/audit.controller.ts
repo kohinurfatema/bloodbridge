@@ -15,7 +15,7 @@ export const listAuditLogs = async (req: AuthRequest, res: Response, next: NextF
 
 export const getAuditLogByIdHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const data = await getAuditLogById(req.params.id);
+    const data = await getAuditLogById(req.params.id as string);
     sendSuccess(res, 200, 'Audit log retrieved', data);
   } catch (err) { next(err); }
 };

@@ -6,9 +6,9 @@ import { AppError } from '../../utils/AppError';
 
 export const createAlertHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { requestId, message } = req.body;
+    const { requestId } = req.body;
     if (!requestId) throw new AppError('requestId is required', 400);
-    const data = await createEmergencyAlert(requestId, message);
+    const data = await createEmergencyAlert(requestId);
     sendSuccess(res, 201, 'Emergency alert created', data);
   } catch (err) { next(err); }
 };
@@ -25,7 +25,7 @@ export const listAlertsHandler = async (req: AuthRequest, res: Response, next: N
 
 export const resolveAlertHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const data = await resolveAlert(req.params.id);
+    const data = await resolveAlert(req.params.id as string);
     sendSuccess(res, 200, 'Alert resolved', data);
   } catch (err) { next(err); }
 };

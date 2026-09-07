@@ -23,7 +23,7 @@ export const updateMe = async (req: AuthRequest, res: Response, next: NextFuncti
 
 export const getUserByIdHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const data = await getUserById(req.params.id);
+    const data = await getUserById(req.params.id as string);
     sendSuccess(res, 200, 'User retrieved', data);
   } catch (err) { next(err); }
 };

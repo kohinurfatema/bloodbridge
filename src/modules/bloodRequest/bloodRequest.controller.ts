@@ -41,7 +41,7 @@ export const getMyRequests = async (req: AuthRequest, res: Response, next: NextF
 
 export const getRequestById = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const data = await getBloodRequestById(req.params.id);
+    const data = await getBloodRequestById(req.params.id as string);
     sendSuccess(res, 200, 'Blood request retrieved', data);
   } catch (err) { next(err); }
 };
@@ -52,14 +52,14 @@ export const updateStatus = async (req: AuthRequest, res: Response, next: NextFu
     if (!status) throw new AppError('Status is required', 400);
     const validStatuses = ['PENDING', 'MATCHED', 'FULFILLED', 'CANCELLED'];
     if (!validStatuses.includes(status)) throw new AppError(`Status must be one of: ${validStatuses.join(', ')}`, 400);
-    const data = await updateRequestStatus(req.params.id, req.user!.id, req.user!.role, status);
+    const data = await updateRequestStatus(req.params.id as string, req.user!.id, req.user!.role, status);
     sendSuccess(res, 200, 'Blood request status updated', data);
   } catch (err) { next(err); }
 };
 
 export const deleteRequest = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    await softDeleteRequest(req.params.id, req.user!.id, req.user!.role);
+    await softDeleteRequest(req.params.id as string, req.user!.id, req.user!.role);
     sendSuccess(res, 200, 'Blood request deleted', {});
   } catch (err) { next(err); }
 };

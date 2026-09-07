@@ -31,7 +31,7 @@ export const createMatch = async (requestId: string, donorId: string, donorProfi
     prisma.bloodRequest.update({ where: { id: requestId }, data: { status: 'MATCHED' } }),
   ]);
 
-  await logAudit({ userId: adminId, action: 'MATCH_CREATED', entity: 'DonationMatch', entityId: match.id, metadata: { requestId, donorId } });
+  await logAudit({ userId: adminId, action: 'MATCH_CREATED', resource: 'DonationMatch', resourceId: match.id, details: { requestId, donorId } });
   return match;
 };
 

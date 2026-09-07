@@ -14,7 +14,7 @@ export const logAudit = async (params: {
         action: params.action,
         resource: params.resource,
         resourceId: params.resourceId,
-        details: params.details,
+        details: params.details as any,
       },
     });
   } catch {

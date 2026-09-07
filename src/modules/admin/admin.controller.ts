@@ -23,7 +23,7 @@ export const listUsersHandler = async (req: AuthRequest, res: Response, next: Ne
 
 export const toggleUserStatusHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const data = await toggleUserStatus(req.params.id, req.user!.id);
+    const data = await toggleUserStatus(req.params.id as string, req.user!.id);
     const msg = data.isActive ? 'User activated' : 'User deactivated';
     sendSuccess(res, 200, msg, data);
   } catch (err) { next(err); }
@@ -31,7 +31,7 @@ export const toggleUserStatusHandler = async (req: AuthRequest, res: Response, n
 
 export const deleteUserHandler = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    await softDeleteUser(req.params.id, req.user!.id);
+    await softDeleteUser(req.params.id as string, req.user!.id);
     sendSuccess(res, 200, 'User deleted', {});
   } catch (err) { next(err); }
 };

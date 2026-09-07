@@ -13,7 +13,7 @@ export const getAuditLogs = async (query: {
   const where: any = {
     ...(query.userId && { userId: query.userId }),
     ...(query.action && { action: { contains: query.action, mode: 'insensitive' } }),
-    ...(query.entity && { entity: query.entity }),
+    ...(query.entity && { resource: query.entity }),
   };
 
   const [logs, total] = await Promise.all([
