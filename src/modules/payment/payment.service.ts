@@ -50,7 +50,7 @@ export const initiatePayment = async (payerId: string, requestId: string, amount
     },
   });
 
-  await logAudit({ userId: payerId, action: 'PAYMENT_INITIATED', entity: 'Payment', entityId: payment.id, metadata: { requestId, amount, currency } });
+  await logAudit({ userId: payerId, action: 'PAYMENT_INITIATED', resource: 'Payment', resourceId: payment.id, details: { requestId, amount, currency } });
   return { payment, checkoutUrl: session.url };
 };
 

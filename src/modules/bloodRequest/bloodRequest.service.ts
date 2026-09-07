@@ -30,7 +30,7 @@ export const createBloodRequest = async (requesterId: string, data: {
     await createEmergencyAlert(request.id);
   }
 
-  await logAudit({ userId: requesterId, action: 'BLOOD_REQUEST_CREATED', entity: 'BloodRequest', entityId: request.id, metadata: { bloodType: data.bloodType, urgency: data.urgency } });
+  await logAudit({ userId: requesterId, action: 'BLOOD_REQUEST_CREATED', resource: 'BloodRequest', resourceId: request.id, details: { bloodType: data.bloodType, urgency: data.urgency } });
 
   return request;
 };

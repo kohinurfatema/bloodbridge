@@ -119,8 +119,8 @@ export const toggleUserStatus = async (targetId: string, adminId: string) => {
   await logAudit({
     userId: adminId,
     action: updated.isActive ? 'USER_ACTIVATED' : 'USER_DEACTIVATED',
-    entity: 'User',
-    entityId: targetId,
+    resource: 'User',
+    resourceId: targetId,
   });
 
   return updated;
@@ -134,5 +134,5 @@ export const softDeleteUser = async (targetId: string, adminId: string) => {
 
   await prisma.user.update({ where: { id: targetId }, data: { deletedAt: new Date(), isActive: false } });
 
-  await logAudit({ userId: adminId, action: 'USER_DELETED', entity: 'User', entityId: targetId });
+  await logAudit({ userId: adminId, action: 'USER_DELETED', resource: 'User', resourceId: targetId });
 };

@@ -27,7 +27,7 @@ export const registerUser = async (name: string, email: string, password: string
   });
 
   const tokens = generateTokens(user.id, user.role);
-  await logAudit({ userId: user.id, action: 'USER_REGISTERED', entity: 'User', entityId: user.id });
+  await logAudit({ userId: user.id, action: 'USER_REGISTERED', resource: 'User', resourceId: user.id });
   return { user, ...tokens };
 };
 
@@ -40,7 +40,7 @@ export const loginUser = async (email: string, password: string) => {
   if (!valid) throw new AppError('Invalid email or password', 401);
 
   const tokens = generateTokens(user.id, user.role);
-  await logAudit({ userId: user.id, action: 'USER_LOGGED_IN', entity: 'User', entityId: user.id });
+  await logAudit({ userId: user.id, action: 'USER_LOGGED_IN', resource: 'User', resourceId: user.id });
   return {
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
     ...tokens,
