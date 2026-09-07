@@ -15,7 +15,7 @@ export const initiatePayment = async (payerId: string, requestId: string, amount
   if (request.requesterId !== payerId) throw new AppError('You can only pay for your own requests', 403);
 
   const existingPending = await prisma.payment.findFirst({
-    where: { requestId, payerId, status: 'PENDING' },
+    where: { requestId, status: 'PENDING' },
   });
   if (existingPending) throw new AppError('A pending payment already exists for this request', 409);
 
@@ -29,7 +29,7 @@ export const initiatePayment = async (payerId: string, requestId: string, amount
           unit_amount: Math.round(amount * 100),
           product_data: {
             name: `BloodBridge — Blood Request Service Fee`,
-            description: `Patient: ${request.patientName} | Blood Type: ${request.bloodType} | Hospital: ${request.hospital}`,
+            description: `Blood Type: ${request.bloodType} | Hospital: ${request.hospital}`,
           },
         },
         quantity: 1,
@@ -43,7 +43,6 @@ export const initiatePayment = async (payerId: string, requestId: string, amount
   const payment = await prisma.payment.create({
     data: {
       requestId,
-      payerId,
       stripeSessionId: session.id,
       amount,
       currency,
@@ -74,7 +73,7 @@ export const verifyPayment = async (sessionId: string) => {
     where: { id: payment.id },
     data: { status: 'COMPLETED' },
     include: {
-      request: { select: { id: true, patientName: true, bloodType: true, hospital: true } },
+      request: { select: { id: true, bloodType: true, hospital: true } },
     },
   });
 
@@ -83,7 +82,7 @@ export const verifyPayment = async (sessionId: string) => {
 
 export const getMyPayments = async (payerId: string, page = 1, limit = 10) => {
   const skip = (page - 1) * limit;
-  const where = { payerId };
+  const where = { request: { requesterId: payerId } };
 
   const [payments, total] = await Promise.all([
     prisma.payment.findMany({
@@ -92,7 +91,7 @@ export const getMyPayments = async (payerId: string, page = 1, limit = 10) => {
       take: limit,
       orderBy: { createdAt: 'desc' },
       include: {
-        request: { select: { id: true, patientName: true, bloodType: true, hospital: true } },
+        request: { select: { id: true, bloodType: true, hospital: true } },
       },
     }),
     prisma.payment.count({ where }),

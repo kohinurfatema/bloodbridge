@@ -24,7 +24,9 @@ app.use(rateLimit({
 }));
 
 app.use((req, res, next) => {
-  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+  const ct = req.headers['content-type'] ?? '';
+  const hasBody = Number(req.headers['content-length'] ?? 0) > 0 || req.headers['transfer-encoding'];
+  if (['POST', 'PUT', 'PATCH'].includes(req.method) && ct.includes('application/json') && hasBody) {
     express.json()(req, res, next);
   } else {
     next();

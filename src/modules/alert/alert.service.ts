@@ -1,23 +1,21 @@
 import prisma from '../../config/prisma';
 import { AppError } from '../../utils/AppError';
 
-export const createEmergencyAlert = async (requestId: string, message?: string) => {
+export const createEmergencyAlert = async (requestId: string) => {
   const request = await prisma.bloodRequest.findUnique({
     where: { id: requestId, deletedAt: null },
     include: { requester: { select: { name: true } } },
   });
   if (!request) throw new AppError('Blood request not found', 404);
 
-  const defaultMessage = `EMERGENCY: ${request.bloodType.replace('_', '+')} blood urgently needed at ${request.hospital} for patient ${request.patientName}. Contact requester immediately.`;
+  const existing = await prisma.emergencyAlert.findUnique({ where: { requestId } });
+  if (existing) throw new AppError('Alert already exists for this request', 409);
 
   const alert = await prisma.emergencyAlert.create({
-    data: {
-      requestId,
-      message: message ?? defaultMessage,
-    },
+    data: { requestId },
     include: {
       request: {
-        select: { id: true, patientName: true, bloodType: true, hospital: true, location: true, urgency: true },
+        select: { id: true, bloodType: true, hospital: true, location: true, urgency: true },
       },
     },
   });
@@ -36,7 +34,7 @@ export const listAlerts = async (page = 1, limit = 10, onlyActive = false) => {
       orderBy: { createdAt: 'desc' },
       include: {
         request: {
-          select: { id: true, patientName: true, bloodType: true, hospital: true, location: true, urgency: true, status: true },
+          select: { id: true, bloodType: true, hospital: true, location: true, urgency: true, status: true },
         },
       },
     }),
