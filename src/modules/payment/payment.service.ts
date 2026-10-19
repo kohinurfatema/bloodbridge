@@ -4,9 +4,28 @@ import { AppError } from '../../utils/AppError';
 import { logAudit } from '../../utils/auditLogger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '');
-const CLIENT_URL = process.env.CLIENT_URL ?? 'http://localhost:3000';
+// CLIENT_URL may list several frontends, comma separated; the first is the default.
+const CLIENT_URLS = (process.env.CLIENT_URL ?? 'http://localhost:3000')
+  .split(',')
+  .map((url) => url.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
 
-export const initiatePayment = async (payerId: string, requestId: string, amount: number, currency: string) => {
+const isLocalhost = (url: URL) => url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+
+// Send Stripe back to the frontend that started checkout, but only if it is a
+// known frontend (or a local dev server) so this can never be an open redirect.
+const resolveClientUrl = (returnUrl?: string) => {
+  if (!returnUrl) return CLIENT_URLS[0];
+  try {
+    const url = new URL(returnUrl);
+    const known = CLIENT_URLS.some((client) => new URL(client).origin === url.origin);
+    return known || isLocalhost(url) ? url.origin : CLIENT_URLS[0];
+  } catch {
+    return CLIENT_URLS[0];
+  }
+};
+
+export const initiatePayment = async (payerId: string, requestId: string, amount: number, currency: string, returnUrl?: string) => {
   const request = await prisma.bloodRequest.findUnique({
     where: { id: requestId, deletedAt: null },
     include: { requester: { select: { id: true, name: true, email: true } } },
@@ -19,6 +38,7 @@ export const initiatePayment = async (payerId: string, requestId: string, amount
   });
   if (existingPending) throw new AppError('A pending payment already exists for this request', 409);
 
+  const clientUrl = resolveClientUrl(returnUrl);
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     mode: 'payment',
@@ -35,8 +55,8 @@ export const initiatePayment = async (payerId: string, requestId: string, amount
         quantity: 1,
       },
     ],
-    success_url: `${CLIENT_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${CLIENT_URL}/payment/cancel`,
+    success_url: `${clientUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${clientUrl}/payment/cancel`,
     metadata: { requestId, payerId },
   });
 

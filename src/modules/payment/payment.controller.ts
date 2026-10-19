@@ -9,8 +9,8 @@ export const initiatePaymentHandler = async (req: AuthRequest, res: Response, ne
   try {
     const parsed = initiatePaymentSchema.safeParse(req.body);
     if (!parsed.success) throw new AppError('Validation failed', 400, parsed.error.issues.map(e => e.message));
-    const { requestId, amount, currency } = parsed.data;
-    const data = await initiatePayment(req.user!.id, requestId, amount, currency);
+    const { requestId, amount, currency, returnUrl } = parsed.data;
+    const data = await initiatePayment(req.user!.id, requestId, amount, currency, returnUrl);
     sendSuccess(res, 201, 'Payment session created', data);
   } catch (err) { next(err); }
 };
