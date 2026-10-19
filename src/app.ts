@@ -17,10 +17,29 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-app.use(rateLimit({
+// Render sits behind a load balancer; trust its X-Forwarded-For so each
+// client is rate limited by its own IP instead of sharing the proxy's.
+app.set('trust proxy', 1);
+
+const tooManyRequests = { success: false, message: 'Too many requests, please try again later.', errors: [] };
+
+// Stricter limit on credential endpoints to slow down brute-force attempts.
+app.use('/api/v1/auth', rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  message: { success: false, message: 'Too many requests, please try again later.', errors: [] },
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: tooManyRequests,
+}));
+
+// General limit. The Next.js frontend proxies every user's calls from its
+// own servers, so this budget is shared by all frontend users.
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 2000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: tooManyRequests,
 }));
 
 app.use((req, res, next) => {
